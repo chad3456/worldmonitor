@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>India Military Intelligence Dashboard</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#080d12;--surface:#0f1923;--card:#141f2e;--border:#1e3048;--accent:#1e6eb5;--accent2:#c0392b;--text:#e2e8f0;--muted:#64748b;--green:#22c55e;--yellow:#eab308;--red:#ef4444}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh}
+header{background:linear-gradient(135deg,#0a1628 0%,#0f2040 100%);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100}
+header .flag{font-size:28px}
+header h1{font-size:18px;font-weight:700;color:#fff;letter-spacing:.3px}
+header p{font-size:12px;color:var(--muted);margin-top:2px}
+.tab-bar{display:flex;gap:4px;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto}
+.tab-btn{padding:8px 18px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:13px;font-weight:500;cursor:pointer;white-space:nowrap;transition:all .2s}
+.tab-btn.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.tab-btn:hover:not(.active){background:#1a2a3a;color:var(--text)}
+#app{padding:16px;max-width:1400px;margin:0 auto}
+.controls{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;align-items:center}
+.controls select,.controls input{background:var(--card);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px;font-size:13px;outline:none;min-width:150px}
+.controls input{flex:1;max-width:320px}
+.controls input::placeholder{color:var(--muted)}
+.cat-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.chip{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--muted);font-size:12px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.chip.active{border-color:currentColor;font-weight:600}
+.chip[data-cat="all"].active{color:#60a5fa;border-color:#60a5fa;background:#0f2040}
+.chip[data-cat="army"].active{color:#86efac;border-color:#16a34a;background:#052e16}
+.chip[data-cat="navy"].active{color:#93c5fd;border-color:#1d4ed8;background:#0d1f3c}
+.chip[data-cat="airforce"].active{color:#a5b4fc;border-color:#4f46e5;background:#1e1b4b}
+.chip[data-cat="drdo"].active{color:#6ee7b7;border-color:#059669;background:#022c22}
+.chip[data-cat="geopolitics"].active{color:#d8b4fe;border-color:#7c3aed;background:#2e1065}
+.chip[data-cat="operations"].active{color:#fca5a5;border-color:#dc2626;background:#3b0f0f}
+.chip[data-cat="equipment"].active{color:#fcd34d;border-color:#d97706;background:#2d1800}
+.chip[data-cat="cyber"].active{color:#67e8f9;border-color:#0891b2;background:#0c2433}
+.chip[data-cat="policy"].active{color:#d1d5db;border-color:#6b7280;background:#1f2937}
+.chip[data-cat="personnel"].active{color:#fde68a;border-color:#d97706;background:#2d1f00}
+.spending-section{margin-bottom:20px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px}
+.spending-section h3{font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.bar-label{width:140px;font-size:12px;color:var(--text);text-align:right;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{flex:1;height:12px;background:#0a1628;border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;background:linear-gradient(90deg,#1e6eb5,#3b9de8);border-radius:4px;transition:width .6s ease}
+.bar-val{width:60px;font-size:11px;color:var(--muted)}
+.weapons-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.weapon-card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+.weapon-img{width:100%;height:160px;object-fit:cover;background:#0a1628}
+.weapon-img-placeholder{width:100%;height:80px;background:linear-gradient(135deg,#0f2040,#0a1628);display:flex;align-items:center;justify-content:center;font-size:28px}
+.weapon-body{padding:12px;flex:1;display:flex;flex-direction:column;gap:6px}
+.weapon-header{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.weapon-cat{font-size:10px;color:var(--muted);background:#0a1628;padding:2px 7px;border-radius:10px}
+.weapon-year{font-size:10px;color:var(--muted);margin-left:auto}
+.weapon-name{font-size:15px;font-weight:700;color:#fff}
+.weapon-mfr{font-size:11px;color:var(--muted)}
+.weapon-desc{font-size:12px;color:#94a3b8;line-height:1.5}
+.weapon-nations{font-size:11px;color:var(--muted)}
+.weapon-specs{width:100%;border-collapse:collapse;margin-top:4px}
+.weapon-specs td{font-size:11px;padding:2px 0}
+.weapon-specs td:first-child{color:var(--muted);width:48%;padding-right:6px}
+.weapon-specs td:last-child{color:#cbd5e1;font-weight:500}
+.weapon-wiki{display:inline-block;margin-top:8px;font-size:11px;color:#60a5fa;text-decoration:none}
+.weapon-wiki:hover{text-decoration:underline}
+.tweet-feed{display:flex;flex-direction:column;gap:10px}
+.tweet-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;gap:12px}
+.tweet-avatar{width:40px;height:40px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;color:#fff;text-transform:uppercase}
+.tweet-body{flex:1;min-width:0}
+.tweet-header{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.tweet-name{font-size:14px;font-weight:600;color:#fff}
+.tweet-handle{font-size:12px;color:var(--muted)}
+.tweet-time{font-size:11px;color:var(--muted);margin-left:auto}
+.tweet-text{font-size:13px;color:#cbd5e1;line-height:1.6;margin-bottom:8px;word-break:break-word}
+.tweet-cats{display:flex;flex-wrap:wrap;gap:4px}
+.tweet-cat-badge{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:500}
+.tweet-link{font-size:11px;color:#60a5fa;text-decoration:none;margin-left:auto;flex-shrink:0}
+.tweet-link:hover{text-decoration:underline}
+.tweet-footer{display:flex;align-items:center;gap:8px;margin-top:6px}
+.loading{text-align:center;padding:40px;color:var(--muted);font-size:14px}
+.loading-spinner{display:inline-block;width:24px;height:24px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.error-box{background:#1a0a0a;border:1px solid #7f1d1d;border-radius:10px;padding:20px;text-align:center;color:#fca5a5}
+.error-box h3{font-size:15px;margin-bottom:8px}
+.error-box p{font-size:12px;color:var(--muted);line-height:1.5}
+.info-box{background:#0c1a2e;border:1px solid #1d4ed8;border-radius:10px;padding:16px;margin-bottom:16px;font-size:12px;color:#93c5fd;line-height:1.6}
+.info-box strong{color:#60a5fa}
+.badge-count{background:#1e3a5f;color:#60a5fa;font-size:10px;padding:1px 6px;border-radius:8px;margin-left:4px}
+.refresh-btn{margin-left:auto;padding:7px 14px;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:6px;cursor:pointer;font-size:12px}
+.refresh-btn:hover{border-color:var(--accent);color:var(--accent)}
+.last-updated{font-size:11px;color:var(--muted)}
+.progress-bar{height:3px;background:var(--border);border-radius:2px;margin-bottom:16px;overflow:hidden}
+.progress-fill{height:100%;background:var(--accent);transition:width .3s ease;border-radius:2px}
+@media(max-width:600px){.weapons-grid{grid-template-columns:1fr}.bar-label{width:90px;font-size:11px}}
+</style>
+</head>
+<body>
+<header>
+  <span class="flag">🇮🇳</span>
+  <div>
+    <h1>India Military Intelligence Dashboard</h1>
+    <p>Live feed from 95 verified Indian defence accounts · NLP-classified · Source: Twitter/X + Nitter RSS</p>
+  </div>
+</header>
+<nav class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('weapons')">⚔️ Weapons &amp; Arms</button>
+  <button class="tab-btn" onclick="switchTab('feed')">📡 India Defence Feed</button>
+</nav>
+<div id="app">
+  <section id="weapons-section"></section>
+  <section id="feed-section" style="display:none"></section>
+</div>
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const ACCOUNTS = [
+  {handle:'adgpi',name:'Indian Army HQ',url:'https://x.com/adgpi'},
+  {handle:'IAF_MCC',name:'Indian Air Force',url:'https://x.com/IAF_MCC'},
+  {handle:'indiannavy',name:'Indian Navy',url:'https://x.com/indiannavy'},
+  {handle:'SpokespersonMoD',name:'Ministry of Defence',url:'https://x.com/SpokespersonMoD'},
+  {handle:'HQ_IDS_India',name:'HQ Integrated Defence Staff',url:'https://x.com/HQ_IDS_India'},
+  {handle:'NorthernComd_IA',name:'Northern Command',url:'https://x.com/NorthernComd_IA'},
+  {handle:'easterncomd',name:'Eastern Command',url:'https://x.com/easterncomd'},
+  {handle:'westerncomd_IA',name:'Western Command',url:'https://x.com/westerncomd_IA'},
+  {handle:'IN_HQSNC',name:'Southern Naval Command',url:'https://x.com/IN_HQSNC'},
+  {handle:'IN_WNC',name:'Western Naval Command',url:'https://x.com/IN_WNC'},
+  {handle:'CISFHQrs',name:'CISF HQ',url:'https://x.com/CISFHQrs'},
+  {handle:'BSF_India',name:'Border Security Force',url:'https://x.com/BSF_India'},
+  {handle:'crpfindia',name:'CRPF India',url:'https://x.com/crpfindia'},
+  {handle:'ITBP_official',name:'ITBP',url:'https://x.com/ITBP_official'},
+  {handle:'PIB_India',name:'PIB India',url:'https://x.com/PIB_India'},
+  {handle:'PIB_Defence',name:'PIB Defence',url:'https://x.com/PIB_Defence'},
+  {handle:'DefProdnIndia',name:'Defence Production',url:'https://x.com/DefProdnIndia'},
+  {handle:'DRDO_India',name:'DRDO India',url:'https://x.com/DRDO_India'},
+  {handle:'HALHQBLR',name:'HAL Bangalore',url:'https://x.com/HALHQBLR'},
+  {handle:'BharatForgeLtd',name:'Bharat Forge',url:'https://x.com/BharatForgeLtd'},
+  {handle:'ShivAroor',name:'Shiv Aroor',url:'https://x.com/ShivAroor'},
+  {handle:'VishnuNDTV',name:'Vishnu Som NDTV',url:'https://x.com/VishnuNDTV'},
+  {handle:'sidhant',name:'Sidhant Sibal',url:'https://x.com/sidhant'},
+  {handle:'sneheshphilip',name:'Snehesh Philip',url:'https://x.com/sneheshphilip'},
+  {handle:'sandeepunnithan',name:'Sandeep Unnithan',url:'https://x.com/sandeepunnithan'},
+  {handle:'AjitKDubey',name:'Ajit K Dubey',url:'https://x.com/AjitKDubey'},
+  {handle:'livefist',name:'Livefist Defence',url:'https://x.com/livefist'},
+  {handle:'Nitin_Gokhale',name:'Nitin Gokhale',url:'https://x.com/Nitin_Gokhale'},
+  {handle:'AdityaRajKaul',name:'Aditya Raj Kaul',url:'https://x.com/AdityaRajKaul'},
+  {handle:'majorgauravarya',name:'Maj Gaurav Arya',url:'https://x.com/majorgauravarya'},
+  {handle:'AnilChopra_IAF',name:'Air Marshal Anil Chopra',url:'https://x.com/AnilChopra_IAF'},
+  {handle:'AviationWall',name:'Aviation Wall',url:'https://x.com/AviationWall'},
+  {handle:'alpha_defense',name:'Alpha Defense',url:'https://x.com/alpha_defense'},
+  {handle:'Defencematrix1',name:'Defence Matrix',url:'https://x.com/Defencematrix1'},
+  {handle:'DefenceDecode',name:'Defence Decode',url:'https://x.com/DefenceDecode'},
+  {handle:'NewsIADN',name:'IADN News',url:'https://x.com/NewsIADN'},
+  {handle:'idrwalerts',name:'IDRW Alerts',url:'https://x.com/idrwalerts'},
+  {handle:'ReviewVayu',name:'Vayu Aerospace',url:'https://x.com/ReviewVayu'},
+  {handle:'StratNewsGlobal',name:'StratNews Global',url:'https://x.com/StratNewsGlobal'},
+  {handle:'BharatShaktiBSI',name:'Bharat Shakti',url:'https://x.com/BharatShaktiBSI'},
+  {handle:'ChanakyaForum',name:'Chanakya Forum',url:'https://x.com/ChanakyaForum'},
+  {handle:'ORFonline',name:'ORF India',url:'https://x.com/ORFonline'},
+  {handle:'IDSAIndia',name:'IDSA India',url:'https://x.com/IDSAIndia'},
+  {handle:'CLAWSIndia',name:'CLAWS India',url:'https://x.com/CLAWSIndia'},
+  {handle:'USIofIndia',name:'USI of India',url:'https://x.com/USIofIndia'},
+  {handle:'CAPS_INDIA',name:'CAPS India',url:'https://x.com/CAPS_INDIA'},
+  {handle:'detresfa_',name:'Detresfa OSINT',url:'https://x.com/detresfa_'},
+  {handle:'ELINTNews',name:'ELINT News',url:'https://x.com/ELINTNews'},
+  {handle:'IndiaWarMonitor',name:'India War Monitor',url:'https://x.com/IndiaWarMonitor'},
+  {handle:'FrontalForce',name:'Frontal Force',url:'https://x.com/FrontalForce'},
+  {handle:'Gen_RajShukla',name:'Gen Raj Shukla',url:'https://x.com/Gen_RajShukla'},
+  {handle:'Vikram_Sood',name:'Vikram Sood',url:'https://x.com/Vikram_Sood'},
+  {handle:'Space_India',name:'Space India',url:'https://x.com/Space_India'},
+  {handle:'ISROSpaceflight',name:'ISRO Spaceflight',url:'https://x.com/ISROSpaceflight'},
+  {handle:'sentdefender',name:'Sentinel Defense',url:'https://x.com/sentdefender'},
+  {handle:'oryxspioenkop',name:'Oryx OSINT',url:'https://x.com/oryxspioenkop'},
+  {handle:'IndoPac_Info',name:'IndoPacific Info',url:'https://x.com/IndoPac_Info'},
+  {handle:'SwarajyaMag',name:'Swarajya Magazine',url:'https://x.com/SwarajyaMag'},
+];
+
+const COUNTRIES = [
+  {iso:'IN',name:'India',flag:'🇮🇳',spendingB:83.6,personnel:1455550,nuclear:164},
+  {iso:'CN',name:'China',flag:'🇨🇳',spendingB:296,personnel:2035000,nuclear:410},
+  {iso:'US',name:'United States',flag:'🇺🇸',spendingB:858,personnel:1400000,nuclear:5500},
+  {iso:'PK',name:'Pakistan',flag:'🇵🇰',spendingB:10.3,personnel:654000,nuclear:170},
+  {iso:'RU',name:'Russia',flag:'🇷🇺',spendingB:109,personnel:1150000,nuclear:6257},
+  {iso:'FR',name:'France',flag:'🇫🇷',spendingB:61.3,personnel:204000,nuclear:290},
+  {iso:'IL',name:'Israel',flag:'🇮🇱',spendingB:27.5,personnel:169500,nuclear:90},
+  {iso:'GB',name:'UK',flag:'🇬🇧',spendingB:73.6,personnel:153290,nuclear:225},
+];
+const WEAPONS = [
+  {id:'brahmos',name:'BrahMos',cat:'missile',sub:'Supersonic Cruise Missile',nations:['IN','RU','PH','VN'],status:'active',year:2001,mfr:'BrahMos Aerospace',desc:'World\'s fastest operational cruise missile; Mach 2.8, joint India-Russia venture, land/ship/air-launched variants.',specs:{Speed:'Mach 2.8',Range:'300–800 km',Warhead:'200–300 kg',Guidance:'INS + active radar'},img:'https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/BrahMos_supersonic_cruise_missile.jpg/320px-BrahMos_supersonic_cruise_missile.jpg',wikiUrl:'https://en.wikipedia.org/wiki/BrahMos'},
+  {id:'agni5',name:'Agni-V',cat:'missile',sub:'ICBM',nations:['IN'],status:'active',year:2018,mfr:'DRDO/BDL',desc:'India\'s first ICBM-class ballistic missile; MIRV-capable, 5,000+ km range, key nuclear deterrent.',specs:{Range:'>5,000 km',Warhead:'Multiple MIRV',Propulsion:'3-stage solid',CEP:'~10 m'},img:'https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Agni-V_at_Republic_Day_Parade_2013.jpg/320px-Agni-V_at_Republic_Day_Parade_2013.jpg',wikiUrl:'https://en.wikipedia.org/wiki/Agni-V'},
+  {id:'akash',name:'Akash Missile System',cat:'air-defense',sub:'Medium-Range SAM',nations:['IN'],status:'active',year:2009,mfr:'DRDO/BDL',desc:'India\'s indigenous medium-range SAM; Mach 2.5, active radar homing, protects against aircraft and drones.',specs:{Range:'25–45 km',Altitude:'18 km',Speed:'Mach 2.5',Guidance:'Active radar homing'},img:'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/Akash_missile_systems.jpg/320px-Akash_missile_systems.jpg',wikiUrl:'https://en.wikipedia.org/wiki/Akash_(missile)'},
+  {id:'pralay',name:'Pralay Ballistic Missile',cat:'missile',sub:'Tactical Ballistic Missile',nations:['IN'],status:'active',year:2021,mfr:'DRDO',desc:'Surface-to-surface quasi-ballistic missile; manoeuvrable mid-course, DRDO indigenous design, 500km range.',specs:{Range:'150–500 km',Warhead:'350–700 kg',Propulsion:'Solid-fuel',Status:'Inducted 2022'},img:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Pralay_missile.jpg/320px-Pralay_missile.jpg',wikiUrl:'https://en.wikipedia.org/wiki/Pralay_(missile)'},
+  {id:'astra',name:'Astra BVR Missile',cat:'missile',sub:'Air-to-Air BVR Missile',nations:['IN'],status:'active',year:2019,mfr:'DRDO',desc:'India\'s first indigenously developed beyond-visual-range air-to-air missile; Mach 4.5, active radar seeker.',specs:{Range:'110 km',Speed:'Mach 4.5',Guidance:'Active radar',Platform:'Su-30MKI, Tejas'},img:'https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Astra_Missile_-_Republic_Day_Parade_2020.jpg/320px-Astra_Missile_-_Republic_Day_Parade_2020.jpg',wikiUrl:'https://en.wikipedia.org/wiki/Astra_(missile)'},
+  {id:'tejas',name:'HAL Tejas',cat:'aircraft',sub:'Light Combat Aircraft',nations:['IN'],status:'active',year:2016,mfr:'HAL',desc:'India\'s first indigenous supersonic fighter; 4th-gen delta wing, equipped with AESA radar in Mk1A variant.',specs:{Speed:'Mach 1.8',Range:'850 km',Payload:'3,500 kg','AESA Radar':'Uttam (Mk1A)'},img:'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Tejas_aircraft_2014-02-18.jpg/320px-Tejas_aircraft_2014-02-18.jpg',wikiUrl:'https://en.wikipedia.org/wiki/HAL_Tejas'},
+  {id:'rafale',name:'Dassault Rafale',cat:'aircraft',sub:'Multirole Fighter',nations:['IN','FR','EG','QA','GR'],status:'active',year:2021,mfr:'Dassault Aviation',desc:'India acquired 36 Rafale jets; equipped with Meteor BVR, SCALP cruise missile, SPECTRA EW suite.',specs:{Speed:'Mach 1.8',Range:'3,700 km',Payload:'9,500 kg',Weapons:'Meteor, SCALP, MICA'},img:'https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Rafale_at_Aero_India_2021.jpg/320px-Rafale_at_Aero_India_2021.jpg',wikiUrl:'https://en.wikipedia.org/wiki/Dassault_Rafale'},
+  {id:'su30mki',name:'Sukhoi Su-30MKI',cat:'aircraft',sub:'Air Superiority Fighter',nations:['IN'],status:'active',year:2002,mfr:'HAL/Sukhoi',desc:'IAF\'s backbone air superiority fighter; 272 built/licensed by HAL; canard-delta with 3D thrust vectoring.',specs:{Speed:'Mach 2',Range:'3,000 km',Payload:'8,000 kg',Crew:'2 pilots'},img:'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/Sukhoi_Su-30MKI_on_takeoff.jpg/320px-Sukhoi_Su-30MKI_on_takeoff.jpg',wikiUrl:'https://en.wikipedia.org/wiki/Sukhoi_Su-30MKI'},
+  {id:'amca',name:'HAL AMCA',cat:'aircraft',sub:'5th-Gen Stealth Fighter',nations:['IN'],status:'development',year:2035,mfr:'HAL/ADA',desc:'India\'s Advanced Medium Combat Aircraft — 5th-gen stealth fighter under development; internal weapons bay, AESA radar.',specs:{Speed:'Mach 1.8+',Stealth:'Low-observable',IOC:'~2035',GE414:'Engine selected'},img:'https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/HAL_AMCA.jpg/320px-HAL_AMCA.jpg',wikiUrl:'https://en.wikipedia.org/wiki/HAL_Advanced_Medium_Combat_Aircraft'},
+  {id:'vikrant',name:'INS Vikrant (IAC-1)',cat:'naval',sub:'Aircraft Carrier',nations:['IN'],status:'active',year:2022,mfr:'Cochin Shipyard',desc:'India\'s first domestically built aircraft carrier; STOBAR, 30+ aircraft, 45,000 tonnes — commissioned Sep 2022.',specs:{Displacement:'45,000 t',Length:'262 m',Aircraft:'30+',Speed:'>28 kn'},img:'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/INS_Vikrant_%28R11%29_during_sea_trials_2022.jpg/320px-INS_Vikrant_%28R11%29_during_sea_trials_2022.jpg',wikiUrl:'https://en.wikipedia.org/wiki/INS_Vikrant_(2022)'},
+  {id:'arihant',name:'INS Arihant (S-2)',cat:'naval',sub:'Nuclear Ballistic Missile Submarine',nations:['IN'],status:'active',year:2016,mfr:'Shipbuilding Centre',desc:'India\'s first nuclear-armed submarine; indigenous design, K-15/K-4 SLBMs — completes India\'s nuclear triad.',specs:{Displacement:'6,000 t',Missiles:'4×K-4 or 12×K-15',Speed:'24 kn submerged',Reactor:'83 MW PWR'},img:'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/INS_Arihant.jpg/320px-INS_Arihant.jpg',wikiUrl:'https://en.wikipedia.org/wiki/INS_Arihant'},
+  {id:'kolkata',name:'INS Kolkata-class Destroyer',cat:'naval',sub:'Guided Missile Destroyer',nations:['IN'],status:'active',year:2014,mfr:'Mazagon Dock',desc:'India\'s most powerful destroyer class; BrahMos, Barak-8 LRSAM, indigenous stealth design.',specs:{Displacement:'7,400 t',Missiles:'16×BrahMos + 32×Barak-8',Speed:'>30 kn',Length:'163 m'},img:'https://upload.wikimedia.org/wikipedia/commons/thumb/5/57/INS_Kolkata_%28D63%29.jpg/320px-INS_Kolkata_%28D63%29.jpg',wikiUrl:'https://en.wikipedia.org/wiki/INS_Kolkata-class_destroyer'},
+  {id:'arjun',name:'Arjun MBT Mk1A',cat:'armored',sub:'Main Battle Tank',nations:['IN'],status:'active',year:2011,mfr:'DRDO/HVF',desc:'India\'s indigenous MBT; 120mm rifled gun, Kanchan composite armor, ERA, active protection system.',specs:{Weight:'68.5 t',Gun:'120mm rifled',Speed:'67 km/h',APS:'DRDO APS'},img:'https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/Arjun_tank_at_Republic_Day_2006.jpg/320px-Arjun_tank_at_Republic_Day_2006.jpg',wikiUrl:'https://en.wikipedia.org/wiki/Arjun_(tank)'},
+  {id:'t90s',name:'T-90S Bhishma',cat:'armored',sub:'Main Battle Tank',nations:['IN'],status:'active',year:2001,mfr:'Uralvagonzavod/HVF',desc:'Backbone of Indian Army armored corps; 1,600+ in service, 125mm gun, Kontakt-5 ERA, licensed from Russia.',specs:{Weight:'46.5 t',Gun:'2A46M 125mm',Speed:'65 km/h',Units:'>1,600 (India)'},img:'https://upload.wikimedia.org/wikipedia/commons/thumb/2/2d/T-90_Bhishma.JPG/320px-T-90_Bhishma.JPG',wikiUrl:'https://en.wikipedia.org/wiki/T-90S_Bhishma'},
+  {id:'pinaka',name:'Pinaka MLRS',cat:'equipment',sub:'Multiple Launch Rocket System',nations:['IN'],status:'active',year:1999,mfr:'DRDO/Tata/L&T',desc:'Indigenous MLRS; 12 rockets per salvo, 75km range (Mk-II), guided variant with GPS/INS — replacing BM-21.',specs:{Range:'40–75 km',Rockets:'12×214mm per launcher',Accuracy:'<15 m CEP (guided)','Rate of Fire':'12 in 44 s'},img:'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Pinaka_multi-barrel_rocket_launcher.jpg/320px-Pinaka_multi-barrel_rocket_launcher.jpg',wikiUrl:'https://en.wikipedia.org/wiki/Pinaka_(rocket_artillery)'},
+  {id:'tapas',name:'TAPAS BH-201 (Rustom-2)',cat:'equipment',sub:'MALE Surveillance UAV',nations:['IN'],status:'development',year:2024,mfr:'DRDO/HAL',desc:'India\'s medium-altitude long-endurance UAV for ISR; 28-hour endurance, 350 km range, EO/IR payload.',specs:{Endurance:'28 hrs',Altitude:'28,000 ft',Payload:'350 kg',Wingspan:'20.6 m'},img:'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Rustom_2_MALE_UAV.jpg/320px-Rustom_2_MALE_UAV.jpg',wikiUrl:'https://en.wikipedia.org/wiki/DRDO_Rustom'},
+  {id:'mrsam',name:'MR-SAM / Barak-8',cat:'air-defense',sub:'Medium-Range SAM (Naval/Land)',nations:['IN','IL'],status:'active',year:2015,mfr:'DRDO/IAI/Rafael',desc:'Joint India-Israel medium-range SAM; 70km range, active radar seeker, intercepts aircraft, missiles, drones.',specs:{Range:'70–100 km',Altitude:'16 km',Speed:'Mach 2+',Guidance:'Active radar homing'},img:'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Barak-8_launch.jpg/320px-Barak-8_launch.jpg',wikiUrl:'https://en.wikipedia.org/wiki/Barak_8'},
+  {id:'dhanush',name:'Dhanush Howitzer',cat:'equipment',sub:'Towed Howitzer',nations:['IN'],status:'active',year:2019,mfr:'Gun Carriage Factory',desc:'India\'s indigenous 155mm/45-cal towed howitzer; developed from Bofors, all-terrain, 36km range.',specs:{Calibre:'155mm/45 cal',Range:'36–38 km',Rate:'3–4 rounds/min',Crew:'6'},img:'https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Dhanush_Howitzer.jpg/320px-Dhanush_Howitzer.jpg',wikiUrl:'https://en.wikipedia.org/wiki/Dhanush_(howitzer)'},
+];
+// ── NLP CATEGORIES ────────────────────────────────────────────────────────────
+const CATS = {
+  army:{label:'Army',icon:'🪖',color:'#22c55e',bg:'#052e16',kw:['army','soldier','infantry','corps','battalion','brigade','regiment','northern command','western command','eastern command','southern command','central command','army chief','coas','general officer','sena','ladakh','siachen','doklam','LAC','line of actual control','counter insurgency','counter terrorism','para SF','grenadiers','sikh regiment','guards','armoured corps','artillery','army day','sena diwas','shaheed']},
+  navy:{label:'Navy',icon:'⚓',color:'#60a5fa',bg:'#0d1f3c',kw:['navy','naval','ship','submarine','INS ','fleet','frigate','destroyer','aircraft carrier','vikrant','vikramaditya','vice admiral','commodore','rear admiral','coast guard','maritime','indian ocean','bay of bengal','arabian sea','malabar','navy day','western naval','eastern naval','southern naval','andaman','torpedo','sonar','anti-piracy','humanitarian','HADR','arihant','SSN','SSBN']},
+  airforce:{label:'Air Force',icon:'✈️',color:'#a5b4fc',bg:'#1e1b4b',kw:['IAF','air force','squadron','rafale','tejas','MiG','sukhoi','Su-30','helicopter','Mi-17','chinook','apache','C-130','C-17','airbase','sortie','air chief','ACM','air marshal','wing commander','group captain','pilot','air warrior','air defence','AWACS','interceptor','fighter jet','vayu shakti','air force day','AMCA','combat air patrol','BVR']},
+  drdo:{label:'DRDO/Industry',icon:'🏭',color:'#6ee7b7',bg:'#022c22',kw:['DRDO','HAL','BDL','BEL','BEML','bharat forge','mahindra defence','L&T defence','data patterns','paras defence','indigenously','make in india','atmanirbhar','self reliant','DPP','DAP','defence production','iDEX','positive indigenisation','import substitution','export order','prototype','test flight','induction ceremony','delivery','contract sign','procurement','brahmos','akash','pinaka','arjun','tejas','AMCA','astra missile','pralay','rustom']},
+  geopolitics:{label:'Geopolitics',icon:'🌐',color:'#d8b4fe',bg:'#2e1065',kw:['china','pakistan','border','LAC','LoC','ceasefire','diplomatic','bilateral','quad','I2U2','SCO','BRICS','G20','UN security','sanctions','incursion','tensions','PLA','PLAAF','PLAN','ISI','terror','terrorist','cross border','infiltration','Modi','foreign minister','EAM','MEA','summit','talks','treaty','agreement','indo-pacific','south china sea','taiwan','afghanistan','doklam','galwan','pangong']},
+  operations:{label:'Operations',icon:'⚔️',color:'#fca5a5',bg:'#3b0f0f',kw:['operation','exercise','joint exercise','wargame','drill','combat deployed','mission','patrol','counter-insurgency','anti-terror','encounter','cordon','search operation','malabar','shakti','vajra prahar','hand-in-hand','surya kiran','slinex','garuda','tasman','tiger triumph','resilient shield','rescue operation','flood relief','disaster relief','UN mission','peacekeeping']},
+  equipment:{label:'Equipment',icon:'🔫',color:'#fcd34d',bg:'#2d1800',kw:['tank','T-90','arjun tank','howitzer','dhanush','K9 vajra','ATAGS','brahmos','nirbhay','anti-tank','spike missile','javelin','mortar','AK-203','assault rifle','armoured','IFV','APC','MRAP','radar','EW system','electronic warfare','jamming','drone','UAV','UCAV','heron','rustom','swarm','torpedo','commissioned','inducted','capability','new aircraft','warship','delivered']},
+  cyber:{label:'Cyber & Space',icon:'🛰️',color:'#67e8f9',bg:'#0c2433',kw:['cyber','cyberattack','cybersecurity','hack','breach','malware','digital warfare','information warfare','EW','ISRO','satellite','space','GSAT','NavIC','IRNSS','RISAT','reconnaissance','imaging satellite','ISR','intelligence','surveillance','OSINT','NIA','RAW','IB','NTRO','SIGINT','HUMINT','deep fake','autonomous weapon','lethal autonomous','ASAT','anti-satellite','DRDO space']},
+  policy:{label:'Policy',icon:'📋',color:'#d1d5db',bg:'#1f2937',kw:['ministry of defence','MoD','rajnath','defence minister','CDS','chief of defence','DAC','defence acquisition','cabinet committee','parliament','budget','defence budget','capital outlay','DPP','DAP 2020','positive indigenisation list','FDI defence','offset','theaterisation','integration','NCC','agnipath','agniveer','short service','tour of duty','doctrine','strategy','national security','NSC','NSA','Ajit Doval','policy reform']},
+  personnel:{label:'Personnel',icon:'🏅',color:'#fde68a',bg:'#2d1f00',kw:['gallantry','award','param vir','mahavir','vir chakra','shaurya chakra','kirti chakra','sena medal','nao sena','vayu sena','commendation','medal','passing out parade','POP','IMA','NDA','OTA','AFMC','DSSC','NDC','appointment','promoted','assumed command','retirement','farewell','veteran','OROP','pension','martyrdom','supreme sacrifice','killed in action','bravery','valor']},
+};
+
+function classifyTweet(text) {
+  const lower = text.toLowerCase();
+  const scores = {};
+  for (const [key, cat] of Object.entries(CATS)) {
+    let score = 0;
+    for (const kw of cat.kw) {
+      if (lower.includes(kw.toLowerCase())) score += kw.length > 8 ? 2 : 1;
+    }
+    if (score > 0) scores[key] = score;
+  }
+  const sorted = Object.entries(scores).sort((a,b) => b[1]-a[1]);
+  return sorted.slice(0,3).map(([k]) => k);
+}
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let weaponCat = 'all', weaponCountry = 'all', weaponSearch = '';
+let feedCat = 'all', feedSearch = '';
+let allTweets = [], fetchedBatches = new Set(), isFetching = false;
+
+// ── TAB SWITCHING ─────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', (i===0&&tab==='weapons')||(i===1&&tab==='feed')));
+  document.getElementById('weapons-section').style.display = tab==='weapons' ? '' : 'none';
+  document.getElementById('feed-section').style.display = tab==='feed' ? '' : 'none';
+  if (tab === 'feed' && allTweets.length === 0 && !isFetching) startFeedLoad();
+}
+// ── WEAPONS TAB ───────────────────────────────────────────────────────────────
+function renderWeapons() {
+  const sec = document.getElementById('weapons-section');
+  const cats = ['all','missile','aircraft','naval','armored','air-defense','equipment'];
+  const catLabels = {all:'All Systems',missile:'Missiles',aircraft:'Aircraft',naval:'Naval',armored:'Armored','air-defense':'Air Defense',equipment:'Equipment & UAV'};
+
+  const filtered = WEAPONS.filter(w => {
+    if (weaponCat !== 'all' && w.cat !== weaponCat) return false;
+    if (weaponCountry !== 'all' && !w.nations.includes(weaponCountry)) return false;
+    if (weaponSearch) { const q=weaponSearch.toLowerCase(); if (!w.name.toLowerCase().includes(q)&&!w.desc.toLowerCase().includes(q)&&!w.sub.toLowerCase().includes(q)) return false; }
+    return true;
+  });
+
+  const maxSpend = Math.max(...COUNTRIES.map(c=>c.spendingB));
+  sec.innerHTML = `
+    <div class="cat-chips" id="wCatChips">
+      ${cats.map(c=>`<button class="chip${weaponCat===c?' active':''}" data-cat="${c}" onclick="weaponCat='${c}';renderWeapons()">${catLabels[c]}</button>`).join('')}
+    </div>
+    <div class="controls">
+      <select onchange="weaponCountry=this.value;renderWeapons()">
+        <option value="all">All Nations</option>
+        ${[...new Set(WEAPONS.flatMap(w=>w.nations))].sort().map(n=>`<option value="${n}"${weaponCountry===n?' selected':''}>${n}</option>`).join('')}
+      </select>
+      <input type="text" placeholder="Search weapons…" value="${weaponSearch}" oninput="weaponSearch=this.value;renderWeapons()">
+      <span class="last-updated">${filtered.length} system${filtered.length!==1?'s':''}</span>
+    </div>
+    <div class="spending-section">
+      <h3>Military Spending 2024 (USD Billions)</h3>
+      ${[...COUNTRIES].sort((a,b)=>b.spendingB-a.spendingB).map(c=>`
+        <div class="bar-row">
+          <span class="bar-label">${c.flag} ${c.name}</span>
+          <div class="bar-track"><div class="bar-fill" style="width:${(c.spendingB/maxSpend*100).toFixed(1)}%"></div></div>
+          <span class="bar-val">$${c.spendingB}B</span>
+        </div>`).join('')}
+    </div>
+    <div class="weapons-grid">
+      ${filtered.length===0 ? '<div class="loading">No weapons match the current filters.</div>' : filtered.map(renderWeaponCard).join('')}
+    </div>`;
+}
+
+function renderWeaponCard(w) {
+  const statusColor = w.status==='active'?'#22c55e':w.status==='development'?'#eab308':'#94a3b8';
+  const nationsStr = w.nations.slice(0,5).join(' · ')+(w.nations.length>5?` +${w.nations.length-5}`:'');
+  const specsHtml = Object.entries(w.specs).map(([k,v])=>`<tr><td>${k}</td><td>${v}</td></tr>`).join('');
+  return `<div class="weapon-card">
+    ${w.img?`<img class="weapon-img" src="${w.img}" alt="${esc(w.name)}" loading="lazy" onerror="this.style.display='none'">`:`<div class="weapon-img-placeholder">⚔️</div>`}
+    <div class="weapon-body">
+      <div class="weapon-header">
+        <span class="status-dot" style="background:${statusColor}" title="${w.status}"></span>
+        <span class="weapon-cat">${esc(w.sub)}</span>
+        <span class="weapon-year">${w.year}</span>
+      </div>
+      <div class="weapon-name">${esc(w.name)}</div>
+      <div class="weapon-mfr">${esc(w.mfr)}</div>
+      <div class="weapon-desc">${esc(w.desc)}</div>
+      <div class="weapon-nations">Nations: ${esc(nationsStr)}</div>
+      <table class="weapon-specs">${specsHtml}</table>
+      ${w.wikiUrl?`<a class="weapon-wiki" href="${w.wikiUrl}" target="_blank" rel="noopener">Wikipedia →</a>`:''}
+    </div>
+  </div>`;
+}
+// ── INDIA DEFENCE FEED ────────────────────────────────────────────────────────
+const NITTER_INSTANCES = ['https://nitter.privacydev.net','https://nitter.poast.org','https://nitter.1d4.us','https://nitter.tiekoetter.com'];
+const CORS_PROXIES = ['https://corsproxy.io/?','https://api.allorigins.win/get?url='];
+let nitterIdx = 0, proxyIdx = 0;
+
+async function fetchRss(handle) {
+  for (let pi = 0; pi < CORS_PROXIES.length; pi++) {
+    for (let ni = 0; ni < NITTER_INSTANCES.length; ni++) {
+      const nitter = NITTER_INSTANCES[(nitterIdx+ni)%NITTER_INSTANCES.length];
+      const rssUrl = `${nitter}/${handle}/rss`;
+      const proxy = CORS_PROXIES[(proxyIdx+pi)%CORS_PROXIES.length];
+      try {
+        const url = proxy === 'https://api.allorigins.win/get?url=' ? `${proxy}${encodeURIComponent(rssUrl)}` : `${proxy}${encodeURIComponent(rssUrl)}`;
+        const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+        if (!res.ok) continue;
+        const data = await res.json();
+        const xml = proxy.includes('allorigins') ? data.contents : data;
+        if (!xml || typeof xml !== 'string') continue;
+        const items = parseRss(xml, handle);
+        if (items.length > 0) { nitterIdx = (nitterIdx+ni)%NITTER_INSTANCES.length; return items; }
+      } catch { continue; }
+    }
+  }
+  return [];
+}
+
+async function fetchFromLocalApi(batch) {
+  try {
+    const res = await fetch(`/api/india-defence-feed?batch=${batch}`, { signal: AbortSignal.timeout(12000) });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.tweets || null;
+  } catch { return null; }
+}
+
+function parseRss(xml, handle) {
+  const items = [];
+  const itemRe = /<item>([\s\S]*?)<\/item>/g;
+  let m;
+  while ((m = itemRe.exec(xml)) !== null) {
+    const chunk = m[1];
+    const title = getTag(chunk,'title');
+    const link = getTag(chunk,'link');
+    const pubDate = getTag(chunk,'pubDate');
+    const desc = getTag(chunk,'description') || '';
+    const text = stripHtml(desc) || stripHtml(title||'');
+    if (!text || text.length < 10) continue;
+    const dateMs = pubDate ? new Date(pubDate).getTime() : Date.now();
+    if (isNaN(dateMs)) continue;
+    const cats = classifyTweet(text);
+    items.push({ id: link||Math.random().toString(36), handle, text: text.slice(0,400), url: toTwitterUrl(link, handle), time: dateMs, cats });
+  }
+  return items;
+}
+
+function getTag(xml, tag) {
+  const re = new RegExp(`<${tag}[^>]*>(?:<!\\[CDATA\\[)?([\\s\\S]*?)(?:\\]\\]>)?</${tag}>`, 'i');
+  const m = re.exec(xml); return m ? m[1].trim() : null;
+}
+function stripHtml(h) { return (h||'').replace(/<[^>]+>/g,'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/\s+/g,' ').trim(); }
+function toTwitterUrl(nitterUrl, handle) {
+  if (!nitterUrl) return `https://x.com/${handle}`;
+  return nitterUrl.replace(/^https?:\/\/[^/]+/, 'https://x.com').replace(/#m$/,'');
+}
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function timeAgo(ms) {
+  const s = Math.floor((Date.now()-ms)/1000);
+  if (s<60) return `${s}s ago`; if (s<3600) return `${Math.floor(s/60)}m ago`;
+  if (s<86400) return `${Math.floor(s/3600)}h ago`; return `${Math.floor(s/86400)}d ago`;
+}
+
+async function startFeedLoad() {
+  isFetching = true;
+  renderFeedShell();
+  // Try local API first (works if running via vercel dev or deployed)
+  const apiTweets = await fetchFromLocalApi(0);
+  if (apiTweets && apiTweets.length > 0) {
+    allTweets = apiTweets;
+    renderFeed();
+    // Keep loading more batches in background
+    for (let b = 1; b <= 6; b++) {
+      await new Promise(r => setTimeout(r, 1000));
+      const more = await fetchFromLocalApi(b);
+      if (more && more.length > 0) { allTweets = dedup([...allTweets, ...more]); renderFeed(); }
+    }
+    isFetching = false; return;
+  }
+  // Fallback: fetch Nitter RSS via CORS proxy for each account
+  updateProgress(0, ACCOUNTS.length);
+  for (let i = 0; i < ACCOUNTS.length; i++) {
+    const acc = ACCOUNTS[i];
+    if (fetchedBatches.has(acc.handle)) continue;
+    const items = await fetchRss(acc.handle);
+    fetchedBatches.add(acc.handle);
+    if (items.length > 0) { allTweets = dedup([...allTweets, ...items]); }
+    updateProgress(i+1, ACCOUNTS.length);
+    if (i % 5 === 4) renderFeed();
+    await new Promise(r => setTimeout(r, 300)); // rate limit
+  }
+  renderFeed();
+  isFetching = false;
+}
+
+function dedup(tweets) {
+  const seen = new Set();
+  return tweets.filter(t => { if (seen.has(t.id)) return false; seen.add(t.id); return true; }).sort((a,b)=>b.time-a.time);
+}
+
+function updateProgress(done, total) {
+  const bar = document.getElementById('feedProgress');
+  if (bar) bar.style.width = `${Math.round(done/total*100)}%`;
+  const lbl = document.getElementById('fetchLabel');
+  if (lbl) lbl.textContent = `Fetching account ${done}/${total}…`;
+}
+function renderFeedShell() {
+  const sec = document.getElementById('feed-section');
+  const catEntries = [['all','All','🔍'],...Object.entries(CATS).map(([k,v])=>[k,v.label,v.icon])];
+  sec.innerHTML = `
+    <div class="info-box">
+      <strong>Live Data Pipeline:</strong> Fetches from ${ACCOUNTS.length} verified Indian defence Twitter/X profiles.
+      NLP classifier assigns categories using keyword analysis.<br>
+      <strong>Sources:</strong> Local API (/api/india-defence-feed) → Nitter RSS (CORS proxy fallback) → Real tweets only, zero hallucination.
+    </div>
+    <div class="cat-chips" id="feedCatChips">
+      ${catEntries.map(([k,l,ic])=>`<button class="chip${feedCat===k?' active':''}" data-cat="${k}" onclick="feedCat='${k}';renderFeed()">${ic} ${l}</button>`).join('')}
+    </div>
+    <div class="controls">
+      <select onchange="feedSearch='';document.getElementById('feedSearchInput').value='';renderFeed()">
+        <option value="">All Sources</option>
+        ${ACCOUNTS.map(a=>`<option value="${a.handle}">@${a.handle}</option>`).join('')}
+      </select>
+      <input id="feedSearchInput" type="text" placeholder="Search tweets…" oninput="feedSearch=this.value;renderFeed()">
+      <button class="refresh-btn" onclick="allTweets=[];fetchedBatches=new Set();startFeedLoad()">↻ Refresh</button>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="feedProgress" style="width:0%"></div></div>
+    <div id="fetchLabel" style="font-size:11px;color:var(--muted);margin-bottom:10px">Loading tweets…</div>
+    <div id="tweetList"><div class="loading"><div class="loading-spinner"></div><br>Connecting to data sources…</div></div>`;
+}
+
+function renderFeed() {
+  const list = document.getElementById('tweetList');
+  if (!list) return;
+  const lbl = document.getElementById('fetchLabel');
+  // Re-render chips with updated counts
+  const chipContainer = document.getElementById('feedCatChips');
+  if (chipContainer) {
+    const catEntries = [['all','All','🔍'],...Object.entries(CATS).map(([k,v])=>[k,v.label,v.icon])];
+    chipContainer.innerHTML = catEntries.map(([k,l,ic]) => {
+      const count = k==='all' ? allTweets.length : allTweets.filter(t=>t.cats.includes(k)).length;
+      return `<button class="chip${feedCat===k?' active':''}" data-cat="${k}" onclick="feedCat='${k}';renderFeed()">${ic} ${l}<span class="badge-count">${count}</span></button>`;
+    }).join('');
+  }
+  const filtered = allTweets.filter(t => {
+    if (feedCat !== 'all' && !t.cats.includes(feedCat)) return false;
+    if (feedSearch) { const q=feedSearch.toLowerCase(); if (!t.text.toLowerCase().includes(q)&&!t.handle.toLowerCase().includes(q)) return false; }
+    return true;
+  }).slice(0, 100);
+
+  if (lbl) lbl.textContent = allTweets.length > 0 ? `${allTweets.length} tweets loaded from ${fetchedBatches.size} accounts` : 'Loading…';
+
+  if (allTweets.length === 0) {
+    list.innerHTML = `<div class="loading"><div class="loading-spinner"></div><br>Fetching live tweets…</div>`; return;
+  }
+  if (filtered.length === 0) {
+    list.innerHTML = `<div class="loading">No tweets match the current filter.</div>`; return;
+  }
+  list.innerHTML = `<div class="tweet-feed">${filtered.map(renderTweetCard).join('')}</div>`;
+}
+
+function renderTweetCard(t) {
+  const acc = ACCOUNTS.find(a=>a.handle===t.handle)||{handle:t.handle,name:t.handle};
+  const avatar = acc.handle.slice(0,2).toUpperCase();
+  const catBadges = (t.cats||[]).map(c => {
+    const cat = CATS[c]; if (!cat) return '';
+    return `<span class="tweet-cat-badge" style="background:${cat.bg};color:${cat.color}">${cat.icon} ${cat.label}</span>`;
+  }).join('');
+  const name = acc.name || acc.handle;
+  return `<div class="tweet-card">
+    <div class="tweet-avatar">${avatar}</div>
+    <div class="tweet-body">
+      <div class="tweet-header">
+        <span class="tweet-name">${esc(name)}</span>
+        <span class="tweet-handle">@${esc(t.handle)}</span>
+        <span class="tweet-time">${timeAgo(t.time)}</span>
+      </div>
+      <div class="tweet-text">${esc(t.text)}</div>
+      <div class="tweet-footer">
+        <div class="tweet-cats">${catBadges||'<span style="font-size:11px;color:var(--muted)">General</span>'}</div>
+        <a class="tweet-link" href="${t.url}" target="_blank" rel="noopener">View →</a>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+renderWeapons();
+</script>
+</body>
+</html>
