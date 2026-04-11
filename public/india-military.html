@@ -328,15 +328,6 @@ async function fetchRss(handle) {
   return [];
 }
 
-async function fetchFromLocalApi(batch) {
-  try {
-    const res = await fetch(`/api/india-defence-feed?batch=${batch}`, { signal: AbortSignal.timeout(12000) });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.tweets || null;
-  } catch { return null; }
-}
-
 function parseRss(xml, handle) {
   const items = [];
   const itemRe = /<item>([\s\S]*?)<\/item>/g;
@@ -376,20 +367,7 @@ function timeAgo(ms) {
 async function startFeedLoad() {
   isFetching = true;
   renderFeedShell();
-  // Try local API first (works if running via vercel dev or deployed)
-  const apiTweets = await fetchFromLocalApi(0);
-  if (apiTweets && apiTweets.length > 0) {
-    allTweets = apiTweets;
-    renderFeed();
-    // Keep loading more batches in background
-    for (let b = 1; b <= 6; b++) {
-      await new Promise(r => setTimeout(r, 1000));
-      const more = await fetchFromLocalApi(b);
-      if (more && more.length > 0) { allTweets = dedup([...allTweets, ...more]); renderFeed(); }
-    }
-    isFetching = false; return;
-  }
-  // Fallback: fetch Nitter RSS via CORS proxy for each account
+  // Direct Nitter RSS via CORS proxy — no backend needed
   updateProgress(0, ACCOUNTS.length);
   for (let i = 0; i < ACCOUNTS.length; i++) {
     const acc = ACCOUNTS[i];
@@ -423,7 +401,7 @@ function renderFeedShell() {
     <div class="info-box">
       <strong>Live Data Pipeline:</strong> Fetches from ${ACCOUNTS.length} verified Indian defence Twitter/X profiles.
       NLP classifier assigns categories using keyword analysis.<br>
-      <strong>Sources:</strong> Local API (/api/india-defence-feed) → Nitter RSS (CORS proxy fallback) → Real tweets only, zero hallucination.
+      <strong>Sources:</strong> Nitter RSS via CORS proxy (no backend required) → Real tweets only, zero hallucination.
     </div>
     <div class="cat-chips" id="feedCatChips">
       ${catEntries.map(([k,l,ic])=>`<button class="chip${feedCat===k?' active':''}" data-cat="${k}" onclick="feedCat='${k}';renderFeed()">${ic} ${l}</button>`).join('')}
